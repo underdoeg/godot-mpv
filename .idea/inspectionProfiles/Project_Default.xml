@@ -1,0 +1,33 @@
+<component name="InspectionProjectProfileManager">
+  <profile version="1.0">
+    <option name="myName" value="Project Default" />
+    <inspection_tool class="PyPackageRequirementsInspection" enabled="true" level="WARNING" enabled_by_default="true">
+      <option name="ignoredPackages">
+        <value>
+          <list size="13">
+            <item index="0" class="java.lang.String" itemvalue="pytz" />
+            <item index="1" class="java.lang.String" itemvalue="uwsgi" />
+            <item index="2" class="java.lang.String" itemvalue="pandas" />
+            <item index="3" class="java.lang.String" itemvalue="django-ical" />
+            <item index="4" class="java.lang.String" itemvalue="drf-spectacular" />
+            <item index="5" class="java.lang.String" itemvalue="django" />
+            <item index="6" class="java.lang.String" itemvalue="pypandoc-binary" />
+            <item index="7" class="java.lang.String" itemvalue="django-autoslug" />
+            <item index="8" class="java.lang.String" itemvalue="faker" />
+            <item index="9" class="java.lang.String" itemvalue="django-import-export" />
+            <item index="10" class="java.lang.String" itemvalue="django-markdownx" />
+            <item index="11" class="java.lang.String" itemvalue="django-admin-rangefilter" />
+            <item index="12" class="java.lang.String" itemvalue="websockets" />
+          </list>
+        </value>
+      </option>
+    </inspection_tool>
+    <inspection_tool class="PyStubPackagesAdvertiser" enabled="true" level="WARNING" enabled_by_default="true">
+      <option name="ignoredPackages">
+        <list>
+          <option value="PyGObject-stubs==2.2.0" />
+        </list>
+      </option>
+    </inspection_tool>
+  </profile>
+</component>
