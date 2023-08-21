@@ -149,3 +149,4 @@ _deps
 # External projects
 *-prefix/
 
+*.so
