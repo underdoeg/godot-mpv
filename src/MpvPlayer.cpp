@@ -18,6 +18,10 @@ void MpvPlayer::load() {
         return;
     }
 
+    if(source.is_empty()){
+        return;
+    }
+
     const auto source_resolved = ProjectSettings::get_singleton()->globalize_path(source);
     if (source_loaded == source_resolved) {
         return;
@@ -26,20 +30,65 @@ void MpvPlayer::load() {
     run_thread(source_loaded);
 }
 
+
+void MpvPlayer::add_cmd(const mpv_cmd::Cmd &cmd) {
+    std::scoped_lock g(mutex);
+    cmd_queue.push_back(cmd);
+}
+
+std::vector<mpv_cmd::Cmd> MpvPlayer::clear_cmd_queue() {
+    std::scoped_lock g(mutex);
+    auto copy = cmd_queue;
+    cmd_queue.clear();
+    return std::move(copy);
+}
+
+void MpvPlayer::set_source(const String &s) {
+    source = s;
+    if (autoplay) {
+        load();
+    }
+}
+
+const String &MpvPlayer::get_source() const {
+    return source;
+}
+
+void MpvPlayer::set_autoplay(bool value) {
+    autoplay = value;
+    if(autoplay){
+        load();
+    }
+}
+
+bool MpvPlayer::get_autoplay() const {
+    return autoplay;
+}
+
+Ref<ImageTexture> MpvPlayer::get_texture() const {
+    return texture;
+}
+
 void MpvPlayer::play() {
     load();
+    add_cmd(mpv_cmd::Play());
 }
 
 void MpvPlayer::pause() {
-
+    add_cmd(mpv_cmd::Pause());
 }
 
-void MpvPlayer::seek(float seconds) {
+void MpvPlayer::seek_seconds(float seconds) {
+    add_cmd(mpv_cmd::SeekSeconds{seconds});
+}
 
+
+void MpvPlayer::seek_percent(float percent) {
+    add_cmd(mpv_cmd::SeekPercent{percent});
 }
 
 void MpvPlayer::stop() {
-
+    add_cmd(mpv_cmd::Stop());
 }
 
 void MpvPlayer::stop_thread() {
@@ -200,16 +249,28 @@ void MpvPlayer::run_thread(const String &source) {
 //        }
 
         while (!request_exit) {
+            // handle commands
+            auto cmds = clear_cmd_queue();
+            for (const auto cmd: cmds) {
+                std::visit([&](auto &&arg) {
+                    using T = std::decay_t<decltype(arg)>;
+                    if constexpr (std::is_same_v<T, mpv_cmd::Play>) {
+                        send_command({"set", "pause", "no", nullptr});
+                    } else if constexpr (std::is_same_v<T, mpv_cmd::Pause>) {
+                        send_command({"set", "pause", "yes", nullptr});
+                    } else if constexpr (std::is_same_v<T, mpv_cmd::Stop>) {
+                        send_command({"stop", nullptr});
+                    } else if constexpr (std::is_same_v<T, mpv_cmd::SeekSeconds>) {
+                        send_command({"seek", (const char *) &arg.seconds, "absolute", nullptr});
+                    } else if constexpr (std::is_same_v<T, mpv_cmd::SeekPercent>) {
+                        send_command({"seek", (const char *) &arg.percent, "absolute-percent", nullptr});
+                    }
+                }, cmd);
+            }
+
+
+            // check for mpv events
             auto evt = mpv_wait_event(mpv, .5);
-//        if (evt->event_id == MPV_EVENT_NONE) {
-//            end();
-//            break;
-//        }
-
-//        if(evt->event_id != MPV_EVENT_NONE){
-//            std::cout << evt->event_id << std::endl;
-//        }
-
 
             switch (evt->event_id) {
                 case MPV_EVENT_NONE:
@@ -225,7 +286,7 @@ void MpvPlayer::run_thread(const String &source) {
                 case MPV_EVENT_COMMAND_REPLY:
                     break;
                 case MPV_EVENT_START_FILE:
-                    print_line("[MPV] start");
+                    print_line("start");
                     state.playing = true;
                     //emit_signal("play");
 //                    mtx.lock();
@@ -233,7 +294,7 @@ void MpvPlayer::run_thread(const String &source) {
 //                    mtx.unlock();
                     break;
                 case MPV_EVENT_END_FILE: {
-                    print_line("[MPV] stop");
+                    print_line("stop");
 
 //                if (loop) {
 //                    print_line("start loop");
@@ -386,28 +447,6 @@ void MpvPlayer::run_thread(const String &source) {
     //    print_line("starting thread");
 }
 
-void MpvPlayer::set_source(const String &s) {
-    source = s;
-    if (autoplay) {
-        play();
-    }
-}
-
-const String &MpvPlayer::get_source() const {
-    return source;
-}
-
-void MpvPlayer::set_autoplay(bool value) {
-    autoplay = value;
-}
-
-bool MpvPlayer::get_autoplay() const {
-    return autoplay;
-}
-
-Ref<ImageTexture> MpvPlayer::get_texture() const {
-    return texture;
-}
 
 // bindings
 void MpvPlayer::_bind_methods() {
@@ -423,7 +462,8 @@ void MpvPlayer::_bind_methods() {
     ADD_PROPERTY(PropertyInfo(Variant::BOOL, "autoplay"), "set_autoplay", "get_autoplay");
 
     ClassDB::bind_method(D_METHOD("play"), &MpvPlayer::play);
-//    ClassDB::bind_method(D_METHOD("pause"), &MpvPlayer::pause);
+    ClassDB::bind_method(D_METHOD("pause"), &MpvPlayer::pause);
+    ClassDB::bind_method(D_METHOD("stop"), &MpvPlayer::stop);
     ClassDB::bind_method(D_METHOD("get_texture"), &MpvPlayer::get_texture);
 //    ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "texture", PROPERTY_HINT_RESOURCE_TYPE, "ImageTexture"),
 //                 "", "get_texture");

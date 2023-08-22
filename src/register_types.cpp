@@ -1,5 +1,6 @@
 #include "register_types.h"
 #include "MpvPlayer.h"
+#include "MpvTextureRect.h"
 
 #include <gdextension_interface.h>
 #include <godot_cpp/core/defs.hpp>
@@ -10,6 +11,7 @@ using namespace godot;
 void initialize_mpv_module(ModuleInitializationLevel p_level) {
     if (p_level == MODULE_INITIALIZATION_LEVEL_SCENE) {
         ClassDB::register_class<MpvPlayer>();
+        ClassDB::register_class<MpvTextureRect>();
     }
 }
 

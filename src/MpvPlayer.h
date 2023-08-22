@@ -7,11 +7,30 @@
 #include <godot_cpp/core/memory.hpp>
 #include <thread>
 #include <mutex>
+#include <variant>
 
 namespace godot {
 
+
+    namespace mpv_cmd {
+        struct Play {
+        };
+        struct Pause {
+        };
+        struct Stop {
+        };
+        struct SeekSeconds {
+            float seconds;
+        };
+        struct SeekPercent {
+            float percent;
+        };
+        using Cmd = std::variant<Play, Pause, Stop, SeekSeconds, SeekPercent>;
+    };
+
     class MpvPlayer : public Node {
     GDCLASS(MpvPlayer, Node)
+
 
     private:
 
@@ -41,6 +60,8 @@ namespace godot {
         std::atomic_bool request_exit{false};
         std::atomic_bool is_frame_new{false};
 
+        std::vector<mpv_cmd::Cmd> cmd_queue;
+
         Ref<ImageTexture> texture;
         String source;
         String source_loaded;
@@ -50,6 +71,9 @@ namespace godot {
         void stop_thread();
 
         void run_thread(const String &source);
+
+        void add_cmd(const mpv_cmd::Cmd& cmd);
+        std::vector<mpv_cmd::Cmd> clear_cmd_queue();
 
         template<class... Args>
         void print_line(const Variant &arg1, const Args &... args) {
@@ -67,6 +91,7 @@ namespace godot {
         void _notification(int p_what);
 
         void load();
+
         void process();
 
     public:
@@ -85,7 +110,9 @@ namespace godot {
 
         void pause();
 
-        void seek(float seconds);
+        void seek_seconds(float seconds);
+
+        void seek_percent(float percent);
 
         void stop();
 
