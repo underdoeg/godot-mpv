@@ -86,6 +86,14 @@ bool MpvPlayer::is_paused() const {
     return playback_state.paused;
 }
 
+bool MpvPlayer::is_stopped() const {
+    return !playback_state.playing;
+}
+
+bool MpvPlayer::is_playing() const {
+    return playback_state.playing;
+}
+
 void MpvPlayer::set_paused(bool paused) {
     if (paused) {
         pause();
@@ -175,6 +183,7 @@ void MpvPlayer::process() {
         }
     } else {
         if (prev_state.playing) {
+            source_loaded = "";
             emit_signal("playback_stopped");
         }
     }

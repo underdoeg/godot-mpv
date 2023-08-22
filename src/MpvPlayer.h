@@ -37,7 +37,6 @@ namespace godot {
         struct PlaybackState {
             bool playing = false;
             bool paused = false;
-            bool stopped = false;
             bool ended = false;
             bool seeking = false;
             bool buffering = false;
@@ -112,6 +111,10 @@ namespace godot {
         void pause();
 
         bool is_paused() const;
+
+        bool is_stopped() const;
+
+        bool is_playing() const;
 
         void set_paused(bool paused);
 
