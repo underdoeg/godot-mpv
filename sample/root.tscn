@@ -15,32 +15,61 @@ script = ExtResource("1_jlloq")
 source = "http://download.opencontent.netflix.com.s3.amazonaws.com/CosmosLaundromat/CosmosLaundromat_2k24p_HDR_P3PQ.mp4"
 autoplay = true
 
-[node name="HBoxContainer" type="HBoxContainer" parent="."]
+[node name="VBoxContainer" type="VBoxContainer" parent="."]
 layout_mode = 1
 anchors_preset = 7
 anchor_left = 0.5
 anchor_top = 1.0
 anchor_right = 0.5
 anchor_bottom = 1.0
-offset_left = -30.5
-offset_top = -31.0
-offset_right = 30.5
+offset_left = -370.0
+offset_top = -26.0
+offset_right = 370.0
 grow_horizontal = 2
 grow_vertical = 0
+
+[node name="HBoxContainer" type="HBoxContainer" parent="VBoxContainer"]
+layout_mode = 2
 theme_override_constants/separation = 20
 
-[node name="play" type="Button" parent="HBoxContainer"]
+[node name="play" type="Button" parent="VBoxContainer/HBoxContainer"]
 layout_mode = 2
 text = "play"
 
-[node name="pause" type="Button" parent="HBoxContainer"]
+[node name="pause" type="Button" parent="VBoxContainer/HBoxContainer"]
 layout_mode = 2
 text = "pause"
 
-[node name="stop" type="Button" parent="HBoxContainer"]
+[node name="stop" type="Button" parent="VBoxContainer/HBoxContainer"]
 layout_mode = 2
 text = "stop"
 
-[connection signal="pressed" from="HBoxContainer/play" to="." method="_on_play_pressed"]
-[connection signal="pressed" from="HBoxContainer/pause" to="." method="_on_pause_pressed"]
-[connection signal="pressed" from="HBoxContainer/stop" to="." method="_on_stop_pressed"]
+[node name="seek_random_seconds" type="Button" parent="VBoxContainer/HBoxContainer"]
+layout_mode = 2
+text = "Random Seek Percent"
+
+[node name="seek_random_percent" type="Button" parent="VBoxContainer/HBoxContainer"]
+layout_mode = 2
+text = "Random Seek Seconds"
+
+[node name="duration" type="Label" parent="VBoxContainer/HBoxContainer"]
+layout_mode = 2
+text = "Duration: "
+
+[node name="position_percent" type="Label" parent="VBoxContainer/HBoxContainer"]
+layout_mode = 2
+
+[node name="position_seconds" type="Label" parent="VBoxContainer/HBoxContainer"]
+layout_mode = 2
+text = "Percent:"
+
+[node name="Control" type="Control" parent="VBoxContainer"]
+custom_minimum_size = Vector2(0, 20)
+layout_mode = 2
+
+[connection signal="playback_started" from="mpv" to="." method="_on_mpv_playback_started"]
+[connection signal="pressed" from="VBoxContainer/HBoxContainer/play" to="." method="_on_play_pressed"]
+[connection signal="pressed" from="VBoxContainer/HBoxContainer/pause" to="." method="_on_pause_pressed"]
+[connection signal="pressed" from="VBoxContainer/HBoxContainer/stop" to="." method="_on_stop_pressed"]
+[connection signal="pressed" from="VBoxContainer/HBoxContainer/seek_random_seconds" to="." method="_on_seek_random_seconds_pressed"]
+[connection signal="pressed" from="VBoxContainer/HBoxContainer/seek_random_percent" to="." method="_on_seek_random_percent_pressed"]

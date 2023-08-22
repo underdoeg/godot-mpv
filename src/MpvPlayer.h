@@ -72,7 +72,8 @@ namespace godot {
 
         void run_thread(const String &source);
 
-        void add_cmd(const mpv_cmd::Cmd& cmd);
+        void add_cmd(const mpv_cmd::Cmd &cmd);
+
         std::vector<mpv_cmd::Cmd> clear_cmd_queue();
 
         template<class... Args>
@@ -110,9 +111,19 @@ namespace godot {
 
         void pause();
 
+        bool is_paused() const;
+
+        void set_paused(bool paused);
+
+        float get_position_seconds() const;
+
+        float get_position_percent() const;
+
         void seek_seconds(float seconds);
 
         void seek_percent(float percent);
+
+        float get_duration() const;
 
         void stop();
 

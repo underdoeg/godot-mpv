@@ -18,7 +18,7 @@ void MpvPlayer::load() {
         return;
     }
 
-    if(source.is_empty()){
+    if (source.is_empty()) {
         return;
     }
 
@@ -56,7 +56,7 @@ const String &MpvPlayer::get_source() const {
 
 void MpvPlayer::set_autoplay(bool value) {
     autoplay = value;
-    if(autoplay){
+    if (autoplay) {
         load();
     }
 }
@@ -69,6 +69,10 @@ Ref<ImageTexture> MpvPlayer::get_texture() const {
     return texture;
 }
 
+float MpvPlayer::get_duration() const {
+    return playback_state.duration;
+}
+
 void MpvPlayer::play() {
     load();
     add_cmd(mpv_cmd::Play());
@@ -76,6 +80,18 @@ void MpvPlayer::play() {
 
 void MpvPlayer::pause() {
     add_cmd(mpv_cmd::Pause());
+}
+
+bool MpvPlayer::is_paused() const {
+    return playback_state.paused;
+}
+
+void MpvPlayer::set_paused(bool paused) {
+    if (paused) {
+        pause();
+    } else {
+        play();
+    }
 }
 
 void MpvPlayer::seek_seconds(float seconds) {
@@ -148,6 +164,8 @@ void MpvPlayer::process() {
             texture->update(image);
         }
 
+        emit_signal("frame_updated");
+
     }
 
     // do some checks here
@@ -173,6 +191,7 @@ void MpvPlayer::run_thread(const String &source) {
         print_line("thread started");
 
         bool request_render = false;
+        bool first_frame_rendered = false;
 
         PlaybackState state;
 
@@ -261,9 +280,9 @@ void MpvPlayer::run_thread(const String &source) {
                     } else if constexpr (std::is_same_v<T, mpv_cmd::Stop>) {
                         send_command({"stop", nullptr});
                     } else if constexpr (std::is_same_v<T, mpv_cmd::SeekSeconds>) {
-                        send_command({"seek", (const char *) &arg.seconds, "absolute", nullptr});
+                        send_command({"seek", std::to_string(arg.seconds).c_str(), "absolute", nullptr});
                     } else if constexpr (std::is_same_v<T, mpv_cmd::SeekPercent>) {
-                        send_command({"seek", (const char *) &arg.percent, "absolute-percent", nullptr});
+                        send_command({"seek", std::to_string(arg.percent).c_str(), "absolute-percent", nullptr});
                     }
                 }, cmd);
             }
@@ -357,7 +376,7 @@ void MpvPlayer::run_thread(const String &source) {
                     if (property == "time-pos") {
                         state.position_seconds = data_double();
                     } else if (property == "percent-pos") {
-                        state.position_percent = data_double() / 100.;
+                        state.position_percent = data_double();
                     } else if (property == "duration") {
                         state.duration = data_double();
                     } else if (property == "pause") {
@@ -429,6 +448,7 @@ void MpvPlayer::run_thread(const String &source) {
                     image_thread->set_data(state.width, state.height, false, Image::FORMAT_RGBA8, pixels);
                     mutex.unlock();
                     is_frame_new = true;
+                    first_frame_rendered = true;
                 }
             }
 
@@ -436,6 +456,7 @@ void MpvPlayer::run_thread(const String &source) {
             // pass state to main thread
             mutex.lock();
             playback_state_thread = state;
+            playback_state_thread.playing = first_frame_rendered && state.playing;
             mutex.unlock();
 
         }
@@ -452,6 +473,7 @@ void MpvPlayer::run_thread(const String &source) {
 void MpvPlayer::_bind_methods() {
     ADD_SIGNAL(MethodInfo("playback_started"));
     ADD_SIGNAL(MethodInfo("playback_stopped"));
+    ADD_SIGNAL(MethodInfo("frame_updated"));
 
     ClassDB::bind_method(D_METHOD("set_source", "source"), &MpvPlayer::set_source);
     ClassDB::bind_method(D_METHOD("get_source"), &MpvPlayer::get_source);
@@ -465,7 +487,31 @@ void MpvPlayer::_bind_methods() {
     ClassDB::bind_method(D_METHOD("pause"), &MpvPlayer::pause);
     ClassDB::bind_method(D_METHOD("stop"), &MpvPlayer::stop);
     ClassDB::bind_method(D_METHOD("get_texture"), &MpvPlayer::get_texture);
-//    ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "texture", PROPERTY_HINT_RESOURCE_TYPE, "ImageTexture"),
-//                 "", "get_texture");
+    ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "texture", PROPERTY_HINT_RESOURCE_TYPE, "ImageTexture",
+                              PROPERTY_USAGE_NO_EDITOR), "", "get_texture");
+
+    ClassDB::bind_method(D_METHOD("seek_seconds", "seconds"), &MpvPlayer::seek_seconds);
+    ClassDB::bind_method(D_METHOD("seek_percent", "percent"), &MpvPlayer::seek_percent);
+    ClassDB::bind_method(D_METHOD("get_position_seconds"), &MpvPlayer::get_position_seconds);
+    ClassDB::bind_method(D_METHOD("get_position_percent"), &MpvPlayer::get_position_percent);
+    ClassDB::bind_method(D_METHOD("get_duration"), &MpvPlayer::get_duration);
+    ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "duration", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_NO_EDITOR),
+                 "", "get_duration");
+    ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "position_seconds", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_NO_EDITOR),
+                 "seek_seconds", "get_position_seconds");
+    ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "position_percent", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_NO_EDITOR),
+                 "seek_percent", "get_position_percent");
+
+    ClassDB::bind_method(D_METHOD("is_paused"), &MpvPlayer::is_paused);
+    ClassDB::bind_method(D_METHOD("set_paused", "paused"), &MpvPlayer::set_paused);
+    ADD_PROPERTY(PropertyInfo(Variant::BOOL, "paused"), "set_paused", "is_paused");
+}
+
+float MpvPlayer::get_position_seconds() const {
+    return playback_state.position_seconds;
+}
+
+float MpvPlayer::get_position_percent() const {
+    return playback_state.position_percent;
 }
 
