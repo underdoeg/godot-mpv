@@ -64,12 +64,14 @@ namespace godot {
         Ref<ImageTexture> texture;
         String source;
         String source_loaded;
+        String subtitle_source;
+        String subtitle_source_loaded;
 
         bool autoplay;
 
         void stop_thread();
 
-        void run_thread(const String &source);
+        void run_thread(const String &source, const String &subtitle_source);
 
         void add_cmd(const mpv_cmd::Cmd &cmd);
 
@@ -99,6 +101,10 @@ namespace godot {
         void set_source(const String &source);
 
         const String &get_source() const;
+
+        void set_subtitle_source(const String &source);
+
+        const String &get_subtitle_source() const;
 
         Ref<ImageTexture> get_texture() const;
 

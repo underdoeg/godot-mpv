@@ -1,0 +1,12 @@
+1
+00:00:01,000 --> 00:00:05,000
+Hello from Godot MPV
+
+2
+00:00:06,100 --> 00:00:09,100
+<i>Formatting is also supported</i>
+
+3
+00:00:11,200 --> 00:00:15,200
+<font color="red">I am red</font>
+

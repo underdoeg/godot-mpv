@@ -23,11 +23,16 @@ void MpvPlayer::load() {
     }
 
     const auto source_resolved = ProjectSettings::get_singleton()->globalize_path(source);
-    if (source_loaded == source_resolved) {
+    String subtitle_source_resolved = "";
+    if (!subtitle_source.is_empty()) {
+        subtitle_source_resolved = ProjectSettings::get_singleton()->globalize_path(subtitle_source);
+    }
+    if (source_loaded == source_resolved && subtitle_source_resolved == subtitle_source_loaded) {
         return;
     }
     source_loaded = source_resolved;
-    run_thread(source_loaded);
+    subtitle_source_loaded = subtitle_source_resolved;
+    run_thread(source_loaded, subtitle_source_loaded);
 }
 
 
@@ -52,6 +57,17 @@ void MpvPlayer::set_source(const String &s) {
 
 const String &MpvPlayer::get_source() const {
     return source;
+}
+
+void MpvPlayer::set_subtitle_source(const String &s) {
+    subtitle_source = s;
+    if (is_playing()) {
+        load();
+    }
+}
+
+const String &MpvPlayer::get_subtitle_source() const {
+    return subtitle_source;
 }
 
 void MpvPlayer::set_autoplay(bool value) {
@@ -189,7 +205,7 @@ void MpvPlayer::process() {
     }
 }
 
-void MpvPlayer::run_thread(const String &source) {
+void MpvPlayer::run_thread(const String &source, const String &subtitle_source) {
     stop_thread();
 
     request_exit = false;
@@ -265,11 +281,17 @@ void MpvPlayer::run_thread(const String &source) {
         mpv_observe_property(mpv, 0, "pause", MPV_FORMAT_FLAG);
 
 
+        if (!subtitle_source.is_empty()) {
+            check_error(mpv_set_property_string(mpv, "sub-files", subtitle_source.utf8().get_data()));
+        }
+
         auto send_command = [&](std::vector<const char *> cmd) {
             check_error(mpv_command(mpv, cmd.data()));
         };
 
-        send_command({"loadfile", source.utf8().get_data(), nullptr});
+        send_command({"loadfile", source.utf8().get_data(),
+                      nullptr}); //, "sub-file", "/home/phwhitfield/archive/transmission/Color.Out.of.Space.2019.1080p.SCREENER.x264-Rapta.srt", nullptr});
+
 
 
 //        if (loop) {
@@ -305,8 +327,11 @@ void MpvPlayer::run_thread(const String &source) {
                     break;
                 case MPV_EVENT_SHUTDOWN:
                     break;
-                case MPV_EVENT_LOG_MESSAGE:
+                case MPV_EVENT_LOG_MESSAGE: {
+                    auto evt_prop = reinterpret_cast<mpv_event_log_message *>(evt->data);
+                    print_line("[MPV] ", evt_prop->prefix, ": ", evt_prop->text);
                     break;
+                }
                 case MPV_EVENT_GET_PROPERTY_REPLY:
                     break;
                 case MPV_EVENT_SET_PROPERTY_REPLY:
@@ -487,6 +512,10 @@ void MpvPlayer::_bind_methods() {
     ClassDB::bind_method(D_METHOD("set_source", "source"), &MpvPlayer::set_source);
     ClassDB::bind_method(D_METHOD("get_source"), &MpvPlayer::get_source);
     ADD_PROPERTY(PropertyInfo(Variant::STRING, "source"), "set_source", "get_source");
+
+    ClassDB::bind_method(D_METHOD("set_subtitle_source", "source"), &MpvPlayer::set_subtitle_source);
+    ClassDB::bind_method(D_METHOD("get_subtitle_source"), &MpvPlayer::get_subtitle_source);
+    ADD_PROPERTY(PropertyInfo(Variant::STRING, "subtitle_source"), "set_subtitle_source", "get_subtitle_source");
 
     ClassDB::bind_method(D_METHOD("set_autoplay", "autoplay"), &MpvPlayer::set_autoplay);
     ClassDB::bind_method(D_METHOD("get_autoplay"), &MpvPlayer::get_autoplay);

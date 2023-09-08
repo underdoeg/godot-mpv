@@ -14,6 +14,7 @@ script = ExtResource("1_jlloq")
 
 [node name="mpv" type="MpvPlayer" parent="."]
 source = "http://download.opencontent.netflix.com.s3.amazonaws.com/CosmosLaundromat/CosmosLaundromat_2k24p_HDR_P3PQ.mp4"
+subtitle_source = "subtitles.srt"
 autoplay = true
 
 [node name="VBoxContainer" type="VBoxContainer" parent="."]
