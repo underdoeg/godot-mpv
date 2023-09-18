@@ -48,10 +48,10 @@ void MpvTextureRect::_notification(int p_what) {
 }
 
 void MpvTextureRect::set_player(Node *node) {
-    if(node == player){
+    if (node == player) {
         return;
     }
-    player = Object::cast_to<MpvPlayer>(node);
+    player = node ? Object::cast_to<MpvPlayer>(node) : nullptr;
     if (Engine::get_singleton()->is_editor_hint()) {
         return;
     }

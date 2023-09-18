@@ -10,7 +10,7 @@ namespace godot {
     GDCLASS(MpvTextureRect, TextureRect);
 
 //        NodePath player_path;
-        MpvPlayer *player;
+        MpvPlayer *player = nullptr;
 
     protected:
         static void _bind_methods();
