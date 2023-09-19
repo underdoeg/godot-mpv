@@ -542,7 +542,8 @@ void MpvPlayer::_bind_methods() {
 
     ClassDB::bind_method(D_METHOD("is_paused"), &MpvPlayer::is_paused);
     ClassDB::bind_method(D_METHOD("set_paused", "paused"), &MpvPlayer::set_paused);
-    ADD_PROPERTY(PropertyInfo(Variant::BOOL, "paused"), "set_paused", "is_paused");
+    ADD_PROPERTY(PropertyInfo(Variant::BOOL, "paused", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_NO_EDITOR), "set_paused",
+                 "is_paused");
 }
 
 float MpvPlayer::get_position_seconds() const {
