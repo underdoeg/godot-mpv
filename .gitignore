@@ -151,3 +151,4 @@ _deps
 *-prefix/
 
 *.so
+/.fleet/run.json

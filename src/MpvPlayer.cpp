@@ -174,7 +174,6 @@ void MpvPlayer::process() {
 
 
     if (is_frame_new) {
-
         is_frame_new = false;
 
         mutex.lock();
@@ -189,7 +188,6 @@ void MpvPlayer::process() {
         }
 
         emit_signal("frame_updated");
-
     }
 
     // do some checks here
@@ -212,7 +210,6 @@ void MpvPlayer::run_thread(const String &source, const String &subtitle_source) 
 
 
     thread = std::thread([&] {
-
         print_line("thread started");
 
         bool request_render = false;
@@ -244,19 +241,28 @@ void MpvPlayer::run_thread(const String &source, const String &subtitle_source) 
 
 
         int int_1 = 1;
+        int sw_size[2] = {1920, 1080};
+        // const char *sw_format = "rgb0";
+        // int sw_stride = 1920 * 4;
+
+        auto render_type = (void *) MPV_RENDER_API_TYPE_SW;
+        // char* render_type = "sw";
         mpv_render_param params[] = {
-                {MPV_RENDER_PARAM_API_TYPE,         (void *) MPV_RENDER_API_TYPE_SW},
-                // Tell libmpv that you will call mpv_render_context_update() on render
-                // context update callbacks, and that you will _not_ block on the core
-                // ever (see <libmpv/render.h> "Threading" section for what libmpv
-                // functions you can call at all when this is active).
-                // In particular, this means you must call e.g. mpv_command_async()
-                // instead of mpv_command().
-                // If you want to use synchronous calls, either make them on a separate
-                // thread, or remove the option below (this will disable features like
-                // DR and is not recommended anyway).
-                {MPV_RENDER_PARAM_ADVANCED_CONTROL, &int_1},
-                {MPV_RENDER_PARAM_INVALID,          nullptr}
+            {MPV_RENDER_PARAM_API_TYPE, render_type},
+            // {MPV_RENDER_PARAM_API_TYPE,         (void *) MPV_RENDER_API_TYPE_SW},
+            // Tell libmpv that you will call mpv_render_context_update() on render
+            // context update callbacks, and that you will _not_ block on the core
+            // ever (see <libmpv/render.h> "Threading" section for what libmpv
+            // functions you can call at all when this is active).
+            // In particular, this means you must call e.g. mpv_command_async()
+            // instead of mpv_command().
+            // If you want to use synchronous calls, either make them on a separate
+            // thread, or remove the option below (this will disable features like
+            // DR and is not recommended anyway).
+            //  MPV_RENDER_PARAM_SW_SIZE, MPV_RENDER_PARAM_SW_FORMAT,
+            {MPV_RENDER_PARAM_SW_SIZE, sw_size},
+            {MPV_RENDER_PARAM_ADVANCED_CONTROL, &int_1},
+            {MPV_RENDER_PARAM_INVALID, nullptr}
         };
 
         if (check_error(mpv_render_context_create(&mpv_rd, mpv, params))) {
@@ -289,14 +295,16 @@ void MpvPlayer::run_thread(const String &source, const String &subtitle_source) 
             check_error(mpv_command(mpv, cmd.data()));
         };
 
-        send_command({"loadfile", source.utf8().get_data(),
-                      nullptr}); //, "sub-file", "/home/phwhitfield/archive/transmission/Color.Out.of.Space.2019.1080p.SCREENER.x264-Rapta.srt", nullptr});
+        send_command({
+            "loadfile", source.utf8().get_data(),
+            nullptr
+        });
+        //, "sub-file", "/home/phwhitfield/archive/transmission/Color.Out.of.Space.2019.1080p.SCREENER.x264-Rapta.srt", nullptr});
 
 
-
-//        if (loop) {
-//            mpv_set_option_string(mpv, "loop", "inf");
-//        }
+        //        if (loop) {
+        //            mpv_set_option_string(mpv, "loop", "inf");
+        //        }
 
         while (!request_exit) {
             // handle commands
@@ -341,36 +349,36 @@ void MpvPlayer::run_thread(const String &source, const String &subtitle_source) 
                 case MPV_EVENT_START_FILE:
                     print_line("start");
                     state.playing = true;
-                    //emit_signal("play");
-//                    mtx.lock();
-//                    event_queue.emplace_back("play");
-//                    mtx.unlock();
+                //emit_signal("play");
+                //                    mtx.lock();
+                //                    event_queue.emplace_back("play");
+                //                    mtx.unlock();
                     break;
                 case MPV_EVENT_END_FILE: {
                     print_line("stop");
 
-//                if (loop) {
-//                    print_line("start loop");
-//                    set_position_percent(0);
-//                    break;
-//                }
+                    //                if (loop) {
+                    //                    print_line("start loop");
+                    //                    set_position_percent(0);
+                    //                    break;
+                    //                }
 
                     state.playing = false;
-//                emit_signal("stop");
-//                    // todo handle with mpv directly
-//                    mtx.lock();
-//                    event_queue.emplace_back("stop");
-//                    mtx.unlock();
-////
+                    //                emit_signal("stop");
+                    //                    // todo handle with mpv directly
+                    //                    mtx.lock();
+                    //                    event_queue.emplace_back("stop");
+                    //                    mtx.unlock();
+                    ////
                 }
-                    break;
+                break;
                 case MPV_EVENT_FILE_LOADED:
                     print_line("file loaded");
                     break;
                 case MPV_EVENT_CLIENT_MESSAGE:
                     break;
                 case MPV_EVENT_VIDEO_RECONFIG:
-//                std::cout << "RECONFIG" << std::endl;
+                    //                std::cout << "RECONFIG" << std::endl;
                     break;
                 case MPV_EVENT_AUDIO_RECONFIG:
                     break;
@@ -418,14 +426,14 @@ void MpvPlayer::run_thread(const String &source, const String &subtitle_source) 
                     } else if (property == "dwidth") {
                         state.width = data_int();
                         print_line("width: ", state.width);
-//                        allocate_pixels();
+                        //                        allocate_pixels();
                     } else if (property == "dheight") {
                         state.height = data_int();
                         print_line("height: ", state.height);
-//                        allocate_pixels();
+                        //                        allocate_pixels();
                     }
                 }
-                    break;
+                break;
                 case MPV_EVENT_QUEUE_OVERFLOW:
                     print_line("overflow");
                     break;
@@ -436,53 +444,56 @@ void MpvPlayer::run_thread(const String &source, const String &subtitle_source) 
             // check if we have a new frame
             if (request_render) {
                 auto flags = mpv_render_context_update(mpv_rd);
-                if (flags & MPV_RENDER_UPDATE_FRAME && state.width > 0 && state.height > 0) {
-                    // get the frame
-//                auto allocate_pixels = [&] {
-//                    const auto width = state.width;
-//                    const auto height = state.height;
-//                    const auto size = width * height * 4;
-//                    pixels.resize(size);
-//                };
-
+                // if (flags & MPV_RENDER_UPDATE_FRAME && state.width > 0 && state.height > 0) {
+                // get the frame
+                // auto allocate_pixels = [&] {
+                //     const auto width = state.width;
+                //     const auto height = state.height;
+                //     const auto size = width * height * 4;
+                //     pixels.resize(size);
+                // };
+                print_line("frame updated", flags);
+                if (flags & MPV_RENDER_UPDATE_FRAME) {
                     const auto buffer_size = state.width * state.height * 4;
                     if (pixels.size() != buffer_size) {
                         pixels.resize(buffer_size);
                     }
 
-                    const char *format = "rgb0";
+                    const char *format = "0bgr";
                     Vector2i size = {state.width, state.height};
                     size_t stride = state.width * 4;
+                    if (size.x && size.y) {
+                        auto pixels_write = pixels.ptrw();
 
-                    auto pixels_write = pixels.ptrw();
-
-                    mpv_render_param params[] = {
-                            {MPV_RENDER_PARAM_SW_SIZE,    &size},
-                            {MPV_RENDER_PARAM_SW_FORMAT,  (void *) format},
-                            {MPV_RENDER_PARAM_SW_STRIDE,  &stride},
+                        mpv_render_param params[] = {
+                            {MPV_RENDER_PARAM_SW_SIZE, &size},
+                            {MPV_RENDER_PARAM_SW_FORMAT, (void *) format},
+                            {MPV_RENDER_PARAM_SW_STRIDE, &stride},
                             {MPV_RENDER_PARAM_SW_POINTER, pixels_write},
-                            {MPV_RENDER_PARAM_INVALID,    nullptr}
-                    };
-                    if (check_error(mpv_render_context_render(mpv_rd, params))) {
-                        print_error("error render context");
-                        print_error("size", size);
-                        print_error("stride", stride);
-                        print_error("format", format);
-                        print_error("pixels", pixels.size());
-                        continue;
-                    }
+                            {MPV_RENDER_PARAM_INVALID, nullptr}
+                        };
+                        if (check_error(mpv_render_context_render(mpv_rd, params))) {
+                            print_error("error render context");
+                            print_error("size", size);
+                            print_error("stride", stride);
+                            print_error("format", format);
+                            print_error("pixels", pixels.size());
+                            continue;
+                        }
 
-                    // set alpha
-                    for (size_t i = 3; i < pixels.size(); i += 4) {
-                        pixels_write[i] = 255;
-                    }
+                        // set alpha
+                        for (size_t i = 3; i < pixels.size(); i += 4) {
+                            pixels_write[i] = 255;
+                        }
+                        //print_line("frame updated", state.width);
 
-                    // pass frame to main thread
-                    mutex.lock();
-                    image_thread->set_data(state.width, state.height, false, Image::FORMAT_RGBA8, pixels);
-                    mutex.unlock();
-                    is_frame_new = true;
-                    first_frame_rendered = true;
+                        // pass frame to main thread
+                        mutex.lock();
+                        image_thread->set_data(state.width, state.height, false, Image::FORMAT_RGBA8, pixels);
+                        mutex.unlock();
+                        is_frame_new = true;
+                        first_frame_rendered = true;
+                    }
                 }
             }
 
@@ -492,7 +503,6 @@ void MpvPlayer::run_thread(const String &source, const String &subtitle_source) 
             playback_state_thread = state;
             playback_state_thread.playing = first_frame_rendered && state.playing;
             mutex.unlock();
-
         }
 
         mpv_render_context_free(mpv_rd);
@@ -553,4 +563,3 @@ float MpvPlayer::get_position_seconds() const {
 float MpvPlayer::get_position_percent() const {
     return playback_state.position_percent;
 }
-

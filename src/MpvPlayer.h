@@ -31,7 +31,6 @@ namespace godot {
     class MpvPlayer : public Node {
     GDCLASS(MpvPlayer, Node)
 
-
     private:
 
         struct PlaybackState {
